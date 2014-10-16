@@ -1,0 +1,61 @@
+#SR_ROUTE.C
+The code has two important functions: 
+1. sr_ip_pkt.c 
+2. sr_arp_pkt.c
+These 2 functions manage the  ip and arp packets  respectively. 
+The sr_ip_pkt follows the following structure:
+	- verifies the packet (size and checksum)
+	- checks to see if the router is the destination of the packet
+	if is 
+	   - verifies the protocol 
+		- ICMP - sends a reply
+		- Other - sends icmp port unreachable (type 3, code 3)	
+	else
+	   - Verifies the ttl 
+	   if is 0 
+		- Sends a icmp time exceeded (type 11, code 0)
+	   else
+		- verifies if the router has a route to the destination
+		if it has 
+			verifies if the arp cache contains the MAC
+			if it does
+	   		   - Forwards the packet 
+			else
+			   - Adds packet to the queue
+		else
+		    - sends a icmp destination net unreachable (type 3, code 0)
+
+The sr_arp_pkt
+	-verifies the packet ( size)
+	-verifies if is a reply or request
+	
+	reply:
+	   - verifies if the destination is the router
+		if is
+	   	- insert IP - MAC in the cache
+	    	else
+		- searchs in the requests queue to see if matchs the reply
+	   - sends outstanding packets on the queue ( USER sr_handle_arp_reqs_pkts on ARPCACHE.C)
+	   - drop request for this IP 
+	request:
+	   - verifies if the destination is the router
+		if it is 
+		-sends reply
+
+#SR_PROTOCOL.H
+- I created 2 more structures to support different types of icmp:
+	- sr_icmp_t0_hdr
+	- sr_icmp_t11_hdr
+- I also created a enum to enumerate the differents types of icmp.
+
+
+#SR_ARPCACHE.C
+- I implemented both sr_arpcache_sweepreqs and sr_handle_arpreq functions with the structure described on arpcache.h
+- I created the sr_handle_arp_reqs_pkts functions to send the outstanding packets when a reply arrives.
+
+#SR_SEND_ARP_ICMP 
+- Sends the ICMP packet with the type and code given has arguments to the funcions
+- Sends ARP request and reply
+ 
+
+	   
